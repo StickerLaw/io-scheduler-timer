@@ -1,0 +1,7 @@
+# Notes
+
+Initial guide to get started: http://www.nuodb.com/techblog/tuning-linux-io-scheduler-ssds
+
+Check current scheduler: `cat /sys/block/sda/queue/scheduler`
+
+Change scheduler: `echo <scheduler> | sudo tee /sys/block/sda/queue/scheduler`
