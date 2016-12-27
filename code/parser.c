@@ -2,8 +2,6 @@
  * File: parser.c
  * Author: Lennart Jern - ens16ljn@cs.umu.se
  *
- * Systemnära programmering, 5dv088 - Laboration 4: mfind
- *
  * This parser extracts search data from command line arguments.
  *
  */

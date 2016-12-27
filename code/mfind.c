@@ -2,8 +2,6 @@
  * File: mfind.c
  * Author: Lennart Jern - ens16ljn@cs.umu.se
  *
- * Systemnära programmering, 5dv088 - Laboration 4: mfind
- *
  * Usage: ./mfind [-t {d|f|l}] [-p nrthr] start1 [start2 ...] name
  *
  * mfind can search after files, links and directories from given start paths.
@@ -17,10 +15,12 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#include <pthread.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "parser.h" // Includes list.h
+#include <time.h>           // timing
+#include "parser.h"         // Includes list.h
+
+#define ONE_OVER_BILLION 1E-9
 
 void *find_file(void *s_data);
 int search_path(SearchData *data, char *path);
@@ -94,7 +94,7 @@ void *find_file(void *search_data) {
   } // End while. No more dirs to search and all threads done.
   // Make sure caller knows if there were errors.
   data->error = error;
-  printf("Thread: %ld Reads: %d\n", pthread_self(), reads);
+  printf("Reads: %d\n", reads);
   return NULL;
 }
 
@@ -207,7 +207,22 @@ int get_dirent(struct dirent *priv_dirent, DIR *dir) {
   struct dirent *dirent;
   errno = 0;
 
+  // Starting time
+  struct timespec start;
+  // Time when finished
+  struct timespec end;
+  clock_gettime(CLOCK_REALTIME, &start);
+
   dirent = readdir(dir);
+
+  // Get the time when finished
+  clock_gettime(CLOCK_REALTIME, &end);
+  // Calculate time it took
+  double time_taken = (end.tv_sec - start.tv_sec)
+                        + (end.tv_nsec - start.tv_nsec)
+                        * ONE_OVER_BILLION;
+  printf("%.12lf\n", time_taken);
+
   if (errno != 0) {
     perror("readdir");
     return -1;

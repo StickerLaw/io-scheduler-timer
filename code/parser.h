@@ -2,8 +2,6 @@
  * File: parser.h
  * Author: Lennart Jern - ens16ljn@cs.umu.se
  *
- * Systemnära programmering, 5dv088 - Laboration 4: mfind
- *
  * This is a header file for a parser that extracts search data from command
  * line arguments.
  *

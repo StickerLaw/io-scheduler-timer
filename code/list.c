@@ -2,8 +2,6 @@
  * File: list.c
  * Author: Lennart Jern - ens16ljn@cs.umu.se
  *
- * Systemnära programmering, 5dv088 - Laboration 4: mfind
- *
  * A simple implementation of a linked list.
  *
  */
