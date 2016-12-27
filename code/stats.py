@@ -2,8 +2,8 @@
 stats.py
 
 Process the data produced by timer.sh by calculating the
-medians, max values and min values for each scheduler and thread count.
-Also collects the data about individual thread times, and produces similar
+medians, max values and min values for each scheduler.
+Also collects the data about individual reads, and produces similar
 statistics for them.
 Lastly, produces a set of plots describing the data.
 

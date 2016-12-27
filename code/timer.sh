@@ -11,16 +11,18 @@ rm ../data/data.csv
 rm ../data/*.log
 
 SCHEDULERS="cfq noop deadline"
+DEVICE="/sys/block/sdb/queue/scheduler"
 
-for S in cfq
+for S in $SCHEDULERS
 do
-    echo "Running with $S scheduler"
+    echo $S | sudo tee $DEVICE
+    echo "Scheduler: `cat $DEVICE`"
     LINE=""
     # Time the commands 10 times
     for i in $(seq 1 10)
     do
-        FLAGS="../test_files expression"
-        COMMAND="./mfind $FLAGS >> ../data/$S.log"
+        START="/media/removable/KINGSTON/test_files expression"
+        COMMAND="./mfind $START >> ../data/$S.log"
         # Run the command and store the time
         t="$(sh -c "TIMEFORMAT='%5R'; /usr/bin/time -f '%e' $COMMAND" 2>&1)"
         LINE="$LINE,$t"
@@ -34,3 +36,6 @@ do
     echo "$DATA" >> "../data/data.csv"
 
 done
+
+# Restore cfq scheduler
+echo "cfq" | sudo tee $DEVICE
