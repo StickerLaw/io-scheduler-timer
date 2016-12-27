@@ -41,10 +41,10 @@ void SearchData_delete(SearchData *s_data);
  * @return      0 if everything went well, a positive int otherwise
  */
 int main(int argc, char *argv[]) {
-  int ret = 0;
+    int ret = 0;
 
-  SearchData *search_data = parse_arguments(argc, argv);
-  check_starting_dirs(search_data);
+    SearchData *search_data = parse_arguments(argc, argv);
+    check_starting_dirs(search_data);
 
   #ifdef DEBUG
     printf("# Search data\n==============\n");
@@ -55,15 +55,15 @@ int main(int argc, char *argv[]) {
     printf("==============\n\n");
   #endif
 
-  search_data->num_searchers = 0;
+    search_data->num_searchers = 0;
 
-  find_file(search_data);
+    find_file(search_data);
 
-  // Check for errors
-  ret = search_data->error;
-  // Free allocated memory
-  SearchData_delete(search_data);
-  return ret;
+    // Check for errors
+    ret = search_data->error;
+    // Free allocated memory
+    SearchData_delete(search_data);
+    return ret;
 }
 
 /**
@@ -72,30 +72,30 @@ int main(int argc, char *argv[]) {
  *                   directories to look in
  */
 void *find_file(void *search_data) {
-  unsigned int reads = 0;
-  SearchData *data = search_data;
-  char *path = NULL;
-  int error = 0;
+    unsigned int reads = 0;
+    SearchData *data = search_data;
+    char *path = NULL;
+    int error = 0;
 
-  // Keep searching while there are dirs in the list.
-  while((path = (char *)List_get(data->directories)) != NULL) {
+    // Keep searching while there are dirs in the list.
+    while((path = (char *)List_get(data->directories)) != NULL) {
 
-    data->num_searchers++;
+        data->num_searchers++;
 
-    reads++;
-    if (search_path(data, path) != 0) {
-      perror(path);
-      // We don't consider permission denied or missing dir as errors
-      // error = 1;
-    }
+        reads++;
+        if (search_path(data, path) != 0) {
+            perror(path);
+            // We don't consider permission denied or missing dir as errors
+            // error = 1;
+        }
 
-    delete_path(path);
-    data->num_searchers--;
-  } // End while. No more dirs to search and all threads done.
-  // Make sure caller knows if there were errors.
-  data->error = error;
-  printf("Reads: %d\n", reads);
-  return NULL;
+        delete_path(path);
+        data->num_searchers--;
+    } // End while. No more dirs to search and all threads done.
+      // Make sure caller knows if there were errors.
+    data->error = error;
+    printf("Reads: %d\n", reads);
+    return NULL;
 }
 
 /**
@@ -105,24 +105,24 @@ void *find_file(void *search_data) {
  * @return      0 on successful search, -1 if there were errors
  */
 int search_path(SearchData *data, char *path) {
-  // Open the directory. If it fails, clean up and continue with the next one.
-  DIR *dir = opendir(path);
-  int ret = 0;
+    // Open the directory. If it fails, clean up and continue with the next one.
+    DIR *dir = opendir(path);
+    int ret = 0;
 
-  if (dir == NULL) {
-    ret = -1;
+    if (dir == NULL) {
+        ret = -1;
+        return ret;
+    }
+
+    // Check for matches in the dir
+    if (search_directory(data, dir, path) != 0) {
+        ret = -1;
+    }
+
+    if (closedir(dir) != 0) {
+        perror("closedir");
+    }
     return ret;
-  }
-
-  // Check for matches in the dir
-  if (search_directory(data, dir, path) != 0) {
-    ret = -1;
-  }
-
-  if (closedir(dir) != 0) {
-    perror("closedir");
-  }
-  return ret;
 }
 
 /**
@@ -134,65 +134,65 @@ int search_path(SearchData *data, char *path) {
  * @return              0 if everything went well, a poitive int otherwise.
  */
 int search_directory(SearchData *search_data, DIR *dir, char *path) {
-  struct dirent *priv_dirent;
-  struct stat f_stat;
-  char *file_path = NULL;
-  int at_end = 0;
-  int ret = 0;
+    struct dirent *priv_dirent;
+    struct stat f_stat;
+    char *file_path = NULL;
+    int at_end = 0;
+    int ret = 0;
 
-  while (at_end != 1) {
-    priv_dirent = malloc(sizeof(struct dirent));
-    if (priv_dirent == NULL) {
-      perror("malloc");
-      exit(EXIT_FAILURE);
+    while (at_end != 1) {
+        priv_dirent = malloc(sizeof(struct dirent));
+        if (priv_dirent == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+
+        at_end = get_dirent(priv_dirent, dir);
+        if (at_end != 0) {
+            // Either error or end of dir
+            if (at_end == -1) {
+                ret++;
+            }
+            free(priv_dirent);
+            continue;
+        }
+
+        // Build file path string
+        if (asprintf(&file_path, "%s/%s", path, priv_dirent->d_name) == -1) {
+            fprintf(stderr, "Error: asprintf failed. Unable to set file_path.\n");
+            free(priv_dirent);
+            ret++;
+            continue;
+        }
+        // Get stats (file type)
+        if (lstat(file_path, &f_stat) != 0) {
+            perror(file_path);
+            free(priv_dirent);
+            free(file_path);
+            ret++;
+            continue;
+        }
+
+        // Print matches.
+        process_file(file_path, priv_dirent->d_name, f_stat, search_data);
+
+        // Add directories to the list (not . and ..)
+        if (S_ISDIR(f_stat.st_mode)
+            && strcmp(priv_dirent->d_name, ".") != 0
+            && strcmp(priv_dirent->d_name, "..") != 0) {
+
+            if (add_dir(search_data->directories, file_path) != 1) {
+                fprintf(stderr, "Failed to add directory to list.\n");
+                return -1;
+            }
+        }
+
+        free(file_path);
+        file_path = NULL;
+        free(priv_dirent);
+        priv_dirent = NULL;
     }
-
-    at_end = get_dirent(priv_dirent, dir);
-    if (at_end != 0) {
-      // Either error or end of dir
-      if (at_end == -1) {
-        ret++;
-      }
-      free(priv_dirent);
-      continue;
-    }
-
-    // Build file path string
-    if (asprintf(&file_path, "%s/%s", path, priv_dirent->d_name) == -1) {
-      fprintf(stderr, "Error: asprintf failed. Unable to set file_path.\n");
-      free(priv_dirent);
-      ret++;
-      continue;
-    }
-    // Get stats (file type)
-    if (lstat(file_path, &f_stat) != 0) {
-      perror(file_path);
-      free(priv_dirent);
-      free(file_path);
-      ret++;
-      continue;
-    }
-
-    // Print matches.
-    process_file(file_path, priv_dirent->d_name, f_stat, search_data);
-
-    // Add directories to the list (not . and ..)
-    if (S_ISDIR(f_stat.st_mode)
-        && strcmp(priv_dirent->d_name, ".") != 0
-        && strcmp(priv_dirent->d_name, "..") != 0) {
-
-      if (add_dir(search_data->directories, file_path) != 1) {
-        fprintf(stderr, "Failed to add directory to list.\n");
-        return -1;
-      }
-    }
-
-    free(file_path);
-    file_path = NULL;
-    free(priv_dirent);
-    priv_dirent = NULL;
-  }
-  return ret;
+    return ret;
 }
 
 /**
@@ -204,35 +204,35 @@ int search_directory(SearchData *search_data, DIR *dir, char *path) {
  *                        0 otherwise
  */
 int get_dirent(struct dirent *priv_dirent, DIR *dir) {
-  struct dirent *dirent;
-  errno = 0;
+    struct dirent *dirent;
+    errno = 0;
 
-  // Starting time
-  struct timespec start;
-  // Time when finished
-  struct timespec end;
-  clock_gettime(CLOCK_REALTIME, &start);
+    // Starting time
+    struct timespec start;
+    // Time when finished
+    struct timespec end;
+    clock_gettime(CLOCK_REALTIME, &start);
 
-  dirent = readdir(dir);
+    dirent = readdir(dir);
 
-  // Get the time when finished
-  clock_gettime(CLOCK_REALTIME, &end);
-  // Calculate time it took
-  double time_taken = (end.tv_sec - start.tv_sec)
+    // Get the time when finished
+    clock_gettime(CLOCK_REALTIME, &end);
+    // Calculate time it took
+    double time_taken = (end.tv_sec - start.tv_sec)
                         + (end.tv_nsec - start.tv_nsec)
                         * ONE_OVER_BILLION;
-  printf("%.12lf\n", time_taken);
+    printf("%.12lf\n", time_taken);
 
-  if (errno != 0) {
-    perror("readdir");
-    return -1;
-  } else if (dirent == NULL) {
-    // No more files to read
-    return 1;
-  }
-  // Copy dirent to private memory
-  memcpy(priv_dirent, dirent, sizeof(struct dirent));
-  return 0;
+    if (errno != 0) {
+        perror("readdir");
+        return -1;
+    } else if (dirent == NULL) {
+        // No more files to read
+        return 1;
+    }
+    // Copy dirent to private memory
+    memcpy(priv_dirent, dirent, sizeof(struct dirent));
+    return 0;
 }
 
 /**
@@ -244,27 +244,27 @@ int get_dirent(struct dirent *priv_dirent, DIR *dir) {
  */
 void process_file(char *file_path, char *name,
                   struct stat f_stat, SearchData *data) {
-  int match = 0;
-  char type = data->type;
-  // Is the name matching?
-  if (strcmp(name, data->needle) == 0) {
-    match = 1;
-  }
+    int match = 0;
+    char type = data->type;
+    // Is the name matching?
+    if (strcmp(name, data->needle) == 0) {
+        match = 1;
+    }
 
-  // Check type, print if we have a match
-  if (S_ISDIR(f_stat.st_mode)) {
-    if (match == 1 && (type == 'd' || type == '\0') ) {
-      printf("%s\n", file_path);
+    // Check type, print if we have a match
+    if (S_ISDIR(f_stat.st_mode)) {
+        if (match == 1 && (type == 'd' || type == '\0') ) {
+            printf("%s\n", file_path);
+        }
+    } else if (S_ISREG(f_stat.st_mode)) {
+        if (match == 1 && (type == 'f' || type == '\0') ) {
+            printf("%s\n", file_path);
+        }
+    } else if (S_ISLNK(f_stat.st_mode)) {
+        if (match == 1 && (type == 'l' || type == '\0') ) {
+            printf("%s\n", file_path);
+        }
     }
-  } else if (S_ISREG(f_stat.st_mode)) {
-    if (match == 1 && (type == 'f' || type == '\0') ) {
-      printf("%s\n", file_path);
-    }
-  } else if (S_ISLNK(f_stat.st_mode)) {
-    if (match == 1 && (type == 'l' || type == '\0') ) {
-      printf("%s\n", file_path);
-    }
-  }
 }
 
 /**
@@ -274,17 +274,17 @@ void process_file(char *file_path, char *name,
  * @return          1 if the dir was added, 0 if addition failed.
  */
 int add_dir(LinkedList *list, char *dir_path) {
-  char *new_dir = malloc(strlen(dir_path)+1);
-  if (new_dir == NULL) {
-    perror("malloc");
-    exit(EXIT_FAILURE);
-  }
-  strcpy(new_dir, dir_path);
+    char *new_dir = malloc(strlen(dir_path)+1);
+    if (new_dir == NULL) {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(new_dir, dir_path);
 
-  if (List_append(list, (void *)new_dir) != 1) {
-    return 0;
-  }
-  return 1;
+    if (List_append(list, (void *)new_dir) != 1) {
+        return 0;
+    }
+    return 1;
 }
 
 /**
@@ -292,37 +292,37 @@ int add_dir(LinkedList *list, char *dir_path) {
  * @param search_data -- data egarding the search
  */
 void check_starting_dirs(SearchData *search_data) {
-  char *path;
-  struct stat f_stat;
-  LinkedList *checked_dirs = List_init();
+    char *path;
+    struct stat f_stat;
+    LinkedList *checked_dirs = List_init();
 
-  // Check all starting dirs for matches
-  while((path = (char *)List_get(search_data->directories)) != NULL) {
-    if (lstat(path, &f_stat) != 0) {
-      perror(path);
-      continue;
-    }
-    // Print if there is a match
-    process_file(path, basename(path), f_stat, search_data);
+    // Check all starting dirs for matches
+    while((path = (char *)List_get(search_data->directories)) != NULL) {
+        if (lstat(path, &f_stat) != 0) {
+            perror(path);
+            continue;
+        }
+        // Print if there is a match
+        process_file(path, basename(path), f_stat, search_data);
 
-    // Add the checked dir to the new list
-    char *new_dir = malloc(strlen(path)+1);
-    if (new_dir == NULL) {
-      perror("malloc");
-      exit(EXIT_FAILURE);
-    }
-    strcpy(new_dir, path);
+        // Add the checked dir to the new list
+        char *new_dir = malloc(strlen(path)+1);
+        if (new_dir == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+        strcpy(new_dir, path);
 
-    if (List_append(checked_dirs, (void *)new_dir) == 0) {
-      fprintf(stderr, "Could not add path to list.\n");
-      search_data->error++;
+        if (List_append(checked_dirs, (void *)new_dir) == 0) {
+            fprintf(stderr, "Could not add path to list.\n");
+            search_data->error++;
+        }
+        free(path);
     }
-    free(path);
-  }
-  // Delete the old list
-  List_delete(search_data->directories, delete_path);
-  // Add the checked dirs
-  search_data->directories = checked_dirs;
+    // Delete the old list
+    List_delete(search_data->directories, delete_path);
+    // Add the checked dirs
+    search_data->directories = checked_dirs;
 }
 
 /**
@@ -330,8 +330,8 @@ void check_starting_dirs(SearchData *search_data) {
  * @param path -- a void pointer to a path string
  */
 void print_path(void *path) {
-  char *str = (char *)path;
-  printf("%s\n", str);
+    char *str = (char *)path;
+    printf("%s\n", str);
 }
 
 /**
@@ -339,7 +339,7 @@ void print_path(void *path) {
  * @param path -- path to be freed
  */
 void delete_path(void *path) {
-  free(path);
+    free(path);
 }
 
 /**
@@ -347,7 +347,7 @@ void delete_path(void *path) {
  * @param s_data -- SearchData to free
  */
 void SearchData_delete(SearchData *s_data) {
-  free(s_data->needle);
-  List_delete(s_data->directories, delete_path);
-  free(s_data);
+    free(s_data->needle);
+    List_delete(s_data->directories, delete_path);
+    free(s_data);
 }

@@ -20,8 +20,8 @@
 LinkedList *List_init(void) {
     LinkedList *lst = calloc(1, sizeof(LinkedList));
     if (lst == NULL) {
-      fprintf(stderr, "Allocation of memory for linked list failed\n");
-      exit(EXIT_FAILURE);
+        fprintf(stderr, "Allocation of memory for linked list failed\n");
+        exit(EXIT_FAILURE);
     }
     return lst;
 }
@@ -36,20 +36,20 @@ int List_append(LinkedList *l, void *value) {
 
     Node *new_node = calloc(1, sizeof(Node));
     if (new_node == NULL) {
-      fprintf(stderr, "Failed to allocate memory for new node.\n");
-      return 0;
+        fprintf(stderr, "Failed to allocate memory for new node.\n");
+        return 0;
     }
     new_node->value = value;
     new_node->next = NULL;
 
     if (l->first == NULL) {
-      l->first = new_node;
-      return 1;
+        l->first = new_node;
+        return 1;
     }
     Node *node_ptr = l->first;
 
     while (node_ptr->next != NULL) {
-      node_ptr = node_ptr->next;
+        node_ptr = node_ptr->next;
     }
     node_ptr->next = new_node;
     return 1;
@@ -62,15 +62,15 @@ int List_append(LinkedList *l, void *value) {
  * @return   -- pointer to value, remember to free it later.
  */
 void *List_get(LinkedList *l) {
-  if (l->first == NULL) {
-    return NULL;
-  }
-  Node *node = l->first;
-  l->first = l->first->next;
-  void *value = node->value;
-  free(node);
-  node = NULL;
-  return value;
+    if (l->first == NULL) {
+        return NULL;
+    }
+    Node *node = l->first;
+    l->first = l->first->next;
+    void *value = node->value;
+    free(node);
+    node = NULL;
+    return value;
 }
 
 /**
@@ -81,52 +81,52 @@ void *List_get(LinkedList *l) {
  *              what order they should be placed in.
  */
 void List_sort(LinkedList *lst, int (*comp)(void *value1, void *value2)) {
-  if (lst->first == NULL) {
-    // Empty list, nothing to do
-    return;
-  }
-  Node *boundary = lst->first; // ordered nodes before this
-  Node *smallest = lst->first; // should be placed next in order
-  Node *last_sorted = NULL; // add smallest after this one
-  Node *current = lst->first;
-  Node *prev = NULL;
-  Node *before_smallest = NULL;
-
-  // run untill the whole list is sorted
-  while (boundary->next != NULL) {
-    smallest = boundary;
-    current = boundary;
-    prev = NULL;
-    before_smallest = NULL;
-    // loop through the unordered part of the list and pick out the node
-    // with the "smallest" value
-    while (current->next != NULL) {
-      prev = current;
-      current = current->next;
-      if (comp(smallest->value, current->value) < 0) {
-        smallest = current;
-        before_smallest = prev;
-      }
+    if (lst->first == NULL) {
+        // Empty list, nothing to do
+        return;
     }
+    Node *boundary = lst->first; // ordered nodes before this
+    Node *smallest = lst->first; // should be placed next in order
+    Node *last_sorted = NULL; // add smallest after this one
+    Node *current = lst->first;
+    Node *prev = NULL;
+    Node *before_smallest = NULL;
 
-    // Do we have to move smallest?
-    if (before_smallest != NULL) {
-      // cut out smallest
-      before_smallest->next = smallest->next;
-      if (last_sorted == NULL) {
-        // place it first
-        smallest->next = lst->first;
-        lst->first = smallest;
-      } else {
-        // place it after last_sorted
-        smallest->next = last_sorted->next;
-        last_sorted->next = smallest;
-      }
+    // run untill the whole list is sorted
+    while (boundary->next != NULL) {
+        smallest = boundary;
+        current = boundary;
+        prev = NULL;
+        before_smallest = NULL;
+        // loop through the unordered part of the list and pick out the node
+        // with the "smallest" value
+        while (current->next != NULL) {
+            prev = current;
+            current = current->next;
+            if (comp(smallest->value, current->value) < 0) {
+                smallest = current;
+                before_smallest = prev;
+            }
+        }
+
+        // Do we have to move smallest?
+        if (before_smallest != NULL) {
+            // cut out smallest
+            before_smallest->next = smallest->next;
+            if (last_sorted == NULL) {
+                // place it first
+                smallest->next = lst->first;
+                lst->first = smallest;
+            } else {
+                // place it after last_sorted
+                smallest->next = last_sorted->next;
+                last_sorted->next = smallest;
+            }
+        }
+        // update last_sorted and boundary
+        last_sorted = smallest;
+        boundary = smallest->next;
     }
-    // update last_sorted and boundary
-    last_sorted = smallest;
-    boundary = smallest->next;
-  }
 }
 
 /**
@@ -138,25 +138,25 @@ void List_sort(LinkedList *lst, int (*comp)(void *value1, void *value2)) {
  * @return     1 on successful removal, 0 if no node was removed.
  */
 int List_remove(LinkedList *lst, void (*delete_value)(void *value)) {
-  Node *node = lst->first;
-  Node *prev = node;
-  if (node == NULL) {
-    return 0;
-  }
-  if (node->next == NULL) { // Only one element in list
+    Node *node = lst->first;
+    Node *prev = node;
+    if (node == NULL) {
+        return 0;
+    }
+    if (node->next == NULL) { // Only one element in list
+        delete_value(node->value);
+        free(node);
+        lst->first = NULL;
+        return 1;
+    }
+    while (node->next != NULL) {
+        prev = node;
+        node = node->next;
+    }
+    prev->next = NULL;
     delete_value(node->value);
     free(node);
-    lst->first = NULL;
     return 1;
-  }
-  while (node->next != NULL) {
-    prev = node;
-    node = node->next;
-  }
-  prev->next = NULL;
-  delete_value(node->value);
-  free(node);
-  return 1;
 }
 
 /**
@@ -169,10 +169,10 @@ int List_remove(LinkedList *lst, void (*delete_value)(void *value)) {
  *                      of a node.
  */
 void List_delete(LinkedList *lst, void (*delete_value)(void *value)) {
-  if (lst) {
-      while(List_remove(lst, delete_value));
-      free(lst);
-  }
+    if (lst) {
+        while(List_remove(lst, delete_value)) ;
+        free(lst);
+    }
 }
 
 /**
@@ -186,7 +186,7 @@ void List_print(LinkedList *lst, void (*print)(void *value)) {
     Node *current = lst->first;
 
     while (current != NULL) {
-      print(current->value);
-      current = current->next;
+        print(current->value);
+        current = current->next;
     }
 }

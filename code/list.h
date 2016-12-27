@@ -10,17 +10,17 @@ typedef struct linked_list LinkedList;
 typedef struct node Node;
 
 struct node {
-  void *value;
-  struct node *next;
+        void *value;
+        struct node *next;
 };
 
 struct linked_list {
-  Node *first;
+        Node *first;
 };
 
 struct user_info {
-  unsigned int uid;
-  char *uname;
+        unsigned int uid;
+        char *uname;
 };
 
 /**

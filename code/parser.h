@@ -14,12 +14,12 @@
 typedef struct search_data SearchData;
 
 struct search_data {
-  char *needle;
-  LinkedList *directories;
-  int num_threads;
-  char type;
-  int num_searchers;
-  unsigned int error;
+        char *needle;
+        LinkedList *directories;
+        int num_threads;
+        char type;
+        int num_searchers;
+        unsigned int error;
 };
 
 SearchData *parse_arguments(int argc, char *argv[]);
