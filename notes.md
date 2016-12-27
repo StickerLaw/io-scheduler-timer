@@ -12,3 +12,4 @@ Change scheduler: `echo <scheduler> | sudo tee /sys/block/sda/queue/scheduler`
 - Read the files?
 - Time the total task
 - Check latency per file?
+- Make mfind write timings to log file, instead of using separate timer?
