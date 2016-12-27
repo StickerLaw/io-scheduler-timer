@@ -1,3 +1,4 @@
 *.o
 mfind
 test_files
+copy_to_bbb.sh
