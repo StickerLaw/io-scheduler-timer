@@ -6,3 +6,9 @@ crazy_search
 copy_to_bbb.sh
 data
 .ipynb_checkpoints
+
+*.aux
+*.log
+*.out
+*.gz
+*.csv

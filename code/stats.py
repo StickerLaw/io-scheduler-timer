@@ -23,8 +23,13 @@ def produce_stats():
     # Get individual read times as a DataFrame
     df = get_read_times()
 
+    stats = df.describe()
+    # Escape per cent chars
+    idx = ['count', 'mean', 'std', 'min', '25\%', '50\%', '75\%', 'max']
+    stats = stats.set_index([idx])
+
     # Save stats as csv
-    df.to_csv(base+"stats.csv", index=False, header=header)
+    stats.to_csv(base+"stats.csv", header=header, float_format="%.3e")
 
     # Plot and save the density curves
     ax = df.plot.kde()

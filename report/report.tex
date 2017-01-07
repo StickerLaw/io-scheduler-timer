@@ -1,0 +1,148 @@
+\documentclass[12pt, a4paper]{article} %minska pointen om du vill ha mindre bokstäver
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc} 	
+
+\usepackage{amsmath}	% Om du vill använda AMSLaTeX 
+\usepackage{amssymb}	% Om du vill använda AMS symboler
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{enumerate}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tikz} % för tikz-figurer
+\usepackage{pgfplots}
+\usepackage{csvsimple}
+\usepackage{booktabs}
+
+\pgfplotsset{width=0.75\textwidth,compat=1.9}
+\usepgfplotslibrary{statistics}
+
+\usepackage[parfill]{parskip}
+
+\usepackage{subcaption} % för flera figurer i en
+
+% Färger för exempelkoden
+\usepackage{xcolor}
+\definecolor{backcol}{gray}{0.95} % bakgrundfärg
+\definecolor{darkpastelgreen}{rgb}{0.01, 0.75, 0.24} % bl.a. kommentarer i koden
+
+\usepackage{listings} % för exempelkod
+% Inställningar
+\lstset{
+	basicstyle=\ttfamily\scriptsize, % monospace, mindre bokstäver
+	basewidth  = {.5em,0.5em}, % minskar avståndet mellan bokstäverna (passar fonten)
+	numbers=left, numberstyle=\tiny, 
+	frame=tb, % streck top och bottom
+	breaklines=true, % radbyte vid behov
+	backgroundcolor = \color{backcol},
+	keywordstyle=\color{blue}, 
+	commentstyle=\color{darkpastelgreen},
+	captionpos=t,
+	framexleftmargin=2mm, % padding
+	xleftmargin=2mm, % lägg till marginal för att hållas i linje med texten
+	framexrightmargin=2mm,
+	xrightmargin=2mm,
+	}
+
+\title{Operating systems -- Assignment 3\\I/O Scheduling}
+
+\author{Lennart Jern\\
+	CS: ens16ljn\\ \\ \textbf{Teacher}\\ Ahmed Aley}
+
+
+\begin{document}
+
+
+\maketitle
+
+\newpage
+
+
+\section{Introduction}
+
+The Linux kernel provides a number of different scheduling policies that can be used to fine tune the performance of certain applications.
+In this report, five different schedulers are evaluated using an artificial, CPU intensive, task.
+Three of the tested schedulers are ``normal'', while the last two are ``real-time'' schedulers, meaning that they provide higher priority for their processes than the normal ones do.
+
+The work load consists of a simple program, called \texttt{work}, that sums over a part of Grandi's series\footnote{\url{https://en.wikipedia.org/wiki/Grandi's_series}} ($1-1+1-1+\dots$), using a specified number of threads.
+The source code for \texttt{work} can be found in listing \ref{work}.
+Since the task is easy to parallelize, only require minimal memory access and no disk access, it should be comparable to CPU intense tasks like compression and matrix calculations.
+
+\section{Method}
+
+A Bash script (\texttt{timer.sh}, listing \ref{timer}) was used to time the complete task 10 times for each scheduler, for thread counts ranging from 1 to 10.
+See code listing \ref{timer} for the code.
+Additionally, each thread keeps track of the time taken from the start of its execution until it is finished, and prints this information to \texttt{stdout}, which is forwarded to data files by the bash script.
+
+All this data was then processed by a simple Python program, \texttt{stats}, in order to calculate the median, minimum and maximum run time for each scheduler and thread count; for both the total run times and the individual thread times.
+This program can be found in listing \ref{stats}.
+In addition to the statistical calculations, \texttt{stats} also produces some figures to describe the data.
+The figures and calculations are mostly done using the python libraries Pandas\footnote{\url{http://pandas.pydata.org/}} and Matplotlib\footnote{\url{http://matplotlib.org/}}.
+
+It should be noted here that the processes running with real-time schedulers were run with maximum priority.
+Since the other schedulers does not accept a priority setting, other than the nice value, these were left untouched.
+
+All tests were run on my personal computer with the specifications seen in table \ref{spec}.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{ll}
+		Component & Specification \\
+		\hline
+		OS: & Fedora 25 \\
+		Kernel: & Linux 4.8.13-300.fc25.x86\_64 \\
+		CPU: & Intel Core i5-2500K CPU @ 3.7GHz \\
+		RAM: & 7965MiB \\
+		GCC: & 6.2.1 \\
+		Bash: & 4.3.43 \\
+		Python: & 3.5.2 \\
+		Pandas: & 0.18.1 \\
+		Matplotlib: & 1.5.3
+	\end{tabular}
+	\caption{Test system specification.}
+	\label{spec}
+\end{table}
+
+
+
+\section{Results}
+
+\csvautobooktabular{../data/stats.csv}
+%\csvautobooktabular{../code/test-stats.csv}
+
+
+\section{Final thoughts and lessons learned}
+
+It is quite clear that it is possible to spend a considerable amount of time just analyzing schedulers.
+The results are intriguing as they show clear differences in the behavior between the schedulers, and with several different tasks to compare, even more patterns would surely emerge.
+
+A lesson learned is that one should think carefully about when and where to start and stop the timers.
+If measuring just the whole task, this is quite easy, but for the individual threads it gets more tricky.
+The thread that starts the other threads must also start the timers since the working thread may not get to start immediately.
+Similarly, the working threads must stop their own timers, since there might be a pause between the threads finishing and actually getting joined.
+
+\clearpage
+\appendix
+
+\section{Code listings}
+
+\lstinputlisting[language=bash, caption=timer.sh, label=timer]{../code/timer.sh}
+
+\lstinputlisting[language=python, caption=stats.py, label=stats]{../code/stats.py}
+
+\lstinputlisting[language=bash, caption=generate\_test\_files.sh, label=test-files]{../code/generate_test_files.sh}
+
+\lstinputlisting[language=c, caption=mfind.c, label=mfind]{../code/mfind.c}
+
+\lstinputlisting[caption=Makefile, label=make]{../code/Makefile}
+
+%\section{Raw data}\label{raw}
+
+%\csvautobooktabular{data/medians.csv}
+
+%\csvautobooktabular{data/max.csv}
+
+%\csvautobooktabular{data/min.csv}
+
+\end{document}
