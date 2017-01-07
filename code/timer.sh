@@ -7,37 +7,46 @@
 # Author: Lennart Jern (ens16ljn@cs.umu.se)
 
 # Clean up old results
-rm ../data/data.csv
 rm ../data/*.log
 
 SCHEDULERS="cfq noop deadline"
-#DEVICE="/sys/block/sdb/queue/scheduler"
 DEVICE="/sys/block/sdc/queue/scheduler"
 # Starting directory and expression to search for
-#START="/media/removable/KINGSTON/test_files expression"
 START="/run/media/lennart/KINGSTON/test_files expression"
+# START="/run/media/lennart/Verbatim/test_files expression"
+MNT="/run/media/lennart/KINGSTON"
 
 for S in $SCHEDULERS
 do
     echo $S | sudo tee $DEVICE
     echo "Scheduler: `cat $DEVICE`"
-    LINE=""
+    # LINE=""
     # Time the commands 10 times
     for i in $(seq 1 10)
     do
-        COMMAND="./mfind $START >> ../data/$S.log"
-        # COMMAND="./crazy_search $START >> ../data/$S.log"
-        # Run the command and store the time
-        t="$(sh -c "TIMEFORMAT='%5R'; /usr/bin/time -f '%e' $COMMAND" 2>&1)"
-        LINE="$LINE,$t"
+        # Unmount and mount to clear all cache
+        sudo umount $MNT
+        sudo rm -d /run/media/lennart/KINGSTON
+        sudo mkdir /run/media/lennart/KINGSTON
+        sudo mount /dev/sdc1 $MNT
+
+        # We use 4 parallell comands that store their respective times in
+        # separate log files
+        COMMAND1="./mfind $START >> ../data/$S-1.log"
+        COMMAND2="./mfind $START >> ../data/$S-2.log"
+        COMMAND3="./mfind $START >> ../data/$S-3.log"
+        COMMAND4="./mfind $START >> ../data/$S-4.log"
+
+        eval $COMMAND1 &
+        eval $COMMAND2 &
+        eval $COMMAND3 &
+        eval $COMMAND4 &
+        # Wait for all commands to finish
+        wait
 
         # A little progress report
         echo "Run $i done."
     done
-    # There is already a comma first in LINE
-    DATA=$S$LINE
-    # Write data to a file
-    echo "$DATA" >> "../data/data.csv"
 
 done
 

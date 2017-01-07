@@ -6,7 +6,8 @@
 # Generate a file tree to do tests on.
 
 # Starting directory
-START=/media/removable/KINGSTON
+# START=/media/removable/KINGSTON
+START=/run/media/lennart/Verbatim
 
 # Move to correct directory/device
 cd $START

@@ -3,9 +3,7 @@ stats.py
 
 Process the data produced by timer.sh by calculating the
 medians, max values and min values for each scheduler.
-Also collects the data about individual reads, and produces similar
-statistics for them.
-Lastly, produces a set of plots describing the data.
+Alse plots the density curves.
 
 Author: Lennart Jern (ens16ljn@cs.umu.se)
 """
@@ -14,38 +12,29 @@ import pandas as pd
 import re
 import matplotlib.pyplot as plt
 
-def total_stats():
+def produce_stats():
     """
-    Read the data from files, calculate statistical values and make plots.
+    Read the data from files, calculate statistical values and make a plot.
     """
-
     base = "../data/"
-    total = "data"
-    read_times = "read_stats"
     ext = ".csv"
-    header = ("cfq", "deadline", "noop")
+    header=("cfq", "deadline", "noop")
 
-    # Build the file name
-    f = base + total + ext               # Total run times
-    read_f = base + read_times + ext     # Thread times
-    # Read the time data
-    df = pd.read_csv(f, header=None, index_col=0)
-    df = df.transpose()
-    read_df = pd.read_csv(read_f)
+    # Get individual read times as a DataFrame
+    df = get_read_times()
 
-    # Calculate some statistical properties
-    df.describe().to_csv(base+"total_stats"+ext)
-    read_df.describe().to_csv(base+"read_stats"+ext)
+    # Save stats as csv
+    df.to_csv(base+"stats.csv", index=False, header=header)
 
-    # Plot and save some nice figures
-    # Density curves
-    ax = read_df.plot.kde()
+    # Plot and save the density curves
+    ax = df.plot.kde()
     ax.set_xlabel("Time (s)")
+    ax.set_xlim([0, 0.006])
     fig = ax.get_figure()
     fig.savefig(base+"density.pdf")
 
 
-def collect_thread_times(file_name):
+def collect_read_times(file_name):
     """Read thread times from a file."""
     f = open(file_name)
     times = []
@@ -61,9 +50,8 @@ def collect_thread_times(file_name):
 
     return times
 
-
-def thread_stats():
-    """Collect timing information about all schedulers and store in csv files"""
+def get_read_times():
+    """Collect timing information about all schedulers in a DataFrame."""
     schedulers = ["cfq", "deadline", "noop"]
     base = "../data/"
     ext = ".log"
@@ -72,13 +60,13 @@ def thread_stats():
     # Collect all times in one file
     times = {key: [] for key in schedulers}
     for s in schedulers:
-        f = base+s+ext
-        times[s] = collect_thread_times(f)
-    # Write to file
+        # We have 4 parallell log files for each scheduler
+        for i in [1,2,3,4]:
+            f = base+s+"-"+str(i)+ext
+            times[s].extend(collect_read_times(f))
+    # Return a DataFrame with all timing data
     df = pd.DataFrame(times)
-    df.to_csv(base+"read_stats.csv", index=False, header=header)
+    return df
 
-# Collect thread timings
-thread_stats()
-# Get statistics and plots
-total_stats()
+# Collect statistical data
+produce_stats()

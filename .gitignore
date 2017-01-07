@@ -1,4 +1,5 @@
 *.o
+*.ipynb
 mfind
 test_files
 crazy_search
