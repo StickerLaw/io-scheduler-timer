@@ -11,7 +11,11 @@ rm ../data/data.csv
 rm ../data/*.log
 
 SCHEDULERS="cfq noop deadline"
-DEVICE="/sys/block/sdb/queue/scheduler"
+#DEVICE="/sys/block/sdb/queue/scheduler"
+DEVICE="/sys/block/sdc/queue/scheduler"
+# Starting directory and expression to search for
+#START="/media/removable/KINGSTON/test_files expression"
+START="/run/media/lennart/KINGSTON/test_files expression"
 
 for S in $SCHEDULERS
 do
@@ -21,8 +25,8 @@ do
     # Time the commands 10 times
     for i in $(seq 1 10)
     do
-        START="/media/removable/KINGSTON/test_files expression"
         COMMAND="./mfind $START >> ../data/$S.log"
+        # COMMAND="./crazy_search $START >> ../data/$S.log"
         # Run the command and store the time
         t="$(sh -c "TIMEFORMAT='%5R'; /usr/bin/time -f '%e' $COMMAND" 2>&1)"
         LINE="$LINE,$t"

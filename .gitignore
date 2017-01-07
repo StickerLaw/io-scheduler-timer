@@ -1,5 +1,7 @@
 *.o
 mfind
 test_files
+crazy_search
 copy_to_bbb.sh
 data
+.ipynb_checkpoints

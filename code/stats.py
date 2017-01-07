@@ -21,7 +21,7 @@ def total_stats():
 
     base = "../data/"
     total = "data"
-    read_times = "read_times"
+    read_times = "read_stats"
     ext = ".csv"
     header = ("cfq", "deadline", "noop")
 
@@ -29,9 +29,8 @@ def total_stats():
     f = base + total + ext               # Total run times
     read_f = base + read_times + ext     # Thread times
     # Read the time data
-    df = pd.read_csv(f, header=None)
+    df = pd.read_csv(f, header=None, index_col=0)
     df = df.transpose()
-    df = df[1:]
     read_df = pd.read_csv(read_f)
 
     # Calculate some statistical properties
@@ -44,12 +43,6 @@ def total_stats():
     ax.set_xlabel("Time (s)")
     fig = ax.get_figure()
     fig.savefig(base+"density.pdf")
-
-    # Box plots for all thread counts
-    ax = read_df.plot.box(figsize=(4.5,3))
-    ax.set_ylabel("Time (s)")
-    fig = ax.get_figure()
-    fig.savefig(base+"box.pdf")
 
 
 def collect_thread_times(file_name):
@@ -83,9 +76,9 @@ def thread_stats():
         times[s] = collect_thread_times(f)
     # Write to file
     df = pd.DataFrame(times)
-    df.to_csv(base+"read_times.csv", index=False, header=header)
+    df.to_csv(base+"read_stats.csv", index=False, header=header)
 
 # Collect thread timings
-#thread_stats()
+thread_stats()
 # Get statistics and plots
-#total_stats()
+total_stats()

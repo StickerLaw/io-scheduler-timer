@@ -4,6 +4,7 @@ FLAGS=-std=c11 -Wall -pedantic -Werror -pthread
 
 all: $(OBJECTS)
 	gcc $(OBJECTS) -pthread -o mfind
+	gcc $(FLAGS) crazy_search.c -o crazy_search
 
 mfind.o: mfind.c
 	gcc $(FLAGS) -c mfind.c
