@@ -14,6 +14,8 @@
 \usepackage{pgfplots}
 \usepackage{csvsimple}
 \usepackage{booktabs}
+\usepackage{siunitx} % Formats the units and values
+\usepackage{pgfplotstable} % Generates table from .csv
 
 \pgfplotsset{width=0.75\textwidth,compat=1.9}
 \usepgfplotslibrary{statistics}
@@ -45,6 +47,8 @@
 	xrightmargin=2mm,
 	}
 
+\sisetup{exponent-product = \cdot, output-product = \cdot}
+
 \title{Operating systems -- Assignment 3\\I/O Scheduling}
 
 \author{Lennart Jern\\
@@ -61,35 +65,31 @@
 
 \section{Introduction}
 
-The Linux kernel provides a number of different scheduling policies that can be used to fine tune the performance of certain applications.
-In this report, five different schedulers are evaluated using an artificial, CPU intensive, task.
-Three of the tested schedulers are ``normal'', while the last two are ``real-time'' schedulers, meaning that they provide higher priority for their processes than the normal ones do.
+Disk access is significantly slower than any CPU operation and is often a bottle neck when it comes to performance.
+In this report I compare the performance of three I/O schedulers: ``cfq'', ``noop'' and ``deadline''.
+Additionally, all tests are done on two different types of disks: a USB flash drive and a hard disk drive (also connected via USB).
 
-The work load consists of a simple program, called \texttt{work}, that sums over a part of Grandi's series\footnote{\url{https://en.wikipedia.org/wiki/Grandi's_series}} ($1-1+1-1+\dots$), using a specified number of threads.
-The source code for \texttt{work} can be found in listing \ref{work}.
-Since the task is easy to parallelize, only require minimal memory access and no disk access, it should be comparable to CPU intense tasks like compression and matrix calculations.
+The benchmark used consists of a search for files in a hierarchy of directories.
+In other words, this report is focused on seek times since nothing is written to disk and just meta data (such as file name and directory content) is read.
 
 \section{Method}
 
-A Bash script (\texttt{timer.sh}, listing \ref{timer}) was used to time the complete task 10 times for each scheduler, for thread counts ranging from 1 to 10.
-See code listing \ref{timer} for the code.
-Additionally, each thread keeps track of the time taken from the start of its execution until it is finished, and prints this information to \texttt{stdout}, which is forwarded to data files by the bash script.
+The benchmark consists of a program (\texttt{mfind}, see listing \ref{mfind}) that searches for files in a hierarchy of directories and prints out the time taken for each call to \texttt{readdir}.
+A script (\texttt{timer.sh}, see listing \ref{timer}) is used to run \texttt{mfind} in four parallel processes, ten times for each of the three schedulers, and collects all timing data in log files.
+These logs are then processed by \texttt{stats.py} (see listing \ref{stats}) in order to obtain some statistical properties of the data.
+The python library Pandas\footnote{\url{http://pandas.pydata.org/}} proved very helpful in this regard.
 
-All this data was then processed by a simple Python program, \texttt{stats}, in order to calculate the median, minimum and maximum run time for each scheduler and thread count; for both the total run times and the individual thread times.
-This program can be found in listing \ref{stats}.
-In addition to the statistical calculations, \texttt{stats} also produces some figures to describe the data.
-The figures and calculations are mostly done using the python libraries Pandas\footnote{\url{http://pandas.pydata.org/}} and Matplotlib\footnote{\url{http://matplotlib.org/}}.
-
-It should be noted here that the processes running with real-time schedulers were run with maximum priority.
-Since the other schedulers does not accept a priority setting, other than the nice value, these were left untouched.
 
 All tests were run on my personal computer with the specifications seen in table \ref{spec}.
+The drives used was a Kingston DataTraveler 1 GB and a Verbatim 500 GB portable 2.5'' HDD.
+Both drives were connected to a USB 2.0 port.
 
 \begin{table}[h]
 	\centering
 	\begin{tabular}{ll}
+		\toprule
 		Component & Specification \\
-		\hline
+		\midrule
 		OS: & Fedora 25 \\
 		Kernel: & Linux 4.8.13-300.fc25.x86\_64 \\
 		CPU: & Intel Core i5-2500K CPU @ 3.7GHz \\
@@ -98,18 +98,42 @@ All tests were run on my personal computer with the specifications seen in table
 		Bash: & 4.3.43 \\
 		Python: & 3.5.2 \\
 		Pandas: & 0.18.1 \\
-		Matplotlib: & 1.5.3
+		Matplotlib: & 1.5.3 \\
+		\hline
 	\end{tabular}
 	\caption{Test system specification.}
 	\label{spec}
 \end{table}
 
-
-
 \section{Results}
 
-\csvautobooktabular{../data/stats.csv}
-%\csvautobooktabular{../code/test-stats.csv}
+\begin{table}[ht]
+	\centering
+%\csvreader[tabular=lccc,
+\csvreader[tabular=lSSS,
+	head to column names,
+	table head=\toprule & \multicolumn{1}{c}{cfq} & \multicolumn{1}{c}{deadline} & \multicolumn{1}{c}{noop} \\ \midrule,
+	table foot=\hline
+	]{stats-kingston.csv}{}
+	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
+\caption{Kingston stats}
+\end{table}
+
+\begin{table}[ht]
+	\centering
+	\csvreader[tabular=lSSS,
+	head to column names,
+	table head=\toprule & \multicolumn{1}{c}{cfq} & \multicolumn{1}{c}{deadline} & \multicolumn{1}{c}{noop} \\ \midrule,
+	table foot=\hline
+	]{stats-verbatim.csv}{}
+	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
+	\caption{Verbatim stats}
+\end{table}
+
+
+%\csvautobooktabular{stats-kingston.csv}
+
+%\csvautobooktabular{stats-verbatim.csv}
 
 
 \section{Final thoughts and lessons learned}

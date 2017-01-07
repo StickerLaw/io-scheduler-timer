@@ -12,9 +12,10 @@ rm ../data/*.log
 SCHEDULERS="cfq noop deadline"
 DEVICE="/sys/block/sdc/queue/scheduler"
 # Starting directory and expression to search for
-START="/run/media/lennart/KINGSTON/test_files expression"
-# START="/run/media/lennart/Verbatim/test_files expression"
-MNT="/run/media/lennart/KINGSTON"
+# START="/run/media/lennart/KINGSTON/test_files expression"
+START="/run/media/lennart/Verbatim/test_files expression"
+# MNT="/run/media/lennart/KINGSTON"
+MNT="/run/media/lennart/Verbatim"
 
 for S in $SCHEDULERS
 do
@@ -25,9 +26,11 @@ do
     for i in $(seq 1 10)
     do
         # Unmount and mount to clear all cache
-        sudo umount $MNT
-        sudo rm -d /run/media/lennart/KINGSTON
-        sudo mkdir /run/media/lennart/KINGSTON
+        sync
+        sleep 1
+        sudo umount -f $MNT
+        sudo rm -d $MNT
+        sudo mkdir $MNT
         sudo mount /dev/sdc1 $MNT
 
         # We use 4 parallell comands that store their respective times in
