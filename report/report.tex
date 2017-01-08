@@ -49,6 +49,8 @@
 
 \sisetup{exponent-product = \cdot, output-product = \cdot}
 
+\newtheorem{remark}{Remark}
+
 \title{Operating systems -- Assignment 3\\I/O Scheduling}
 
 \author{Lennart Jern\\
@@ -76,15 +78,23 @@ In other words, this report is focused on seek times since nothing is written to
 
 The benchmark consists of a program (\texttt{mfind}, see listing \ref{mfind}) that searches for files in a hierarchy of directories and prints out the time taken for each call to \texttt{readdir}.
 A script (\texttt{timer.sh}, see listing \ref{timer}) is used to run \texttt{mfind} in four parallel processes, ten times for each of the three schedulers, and collects all timing data in log files.
-These logs are then processed by \texttt{stats.py} (see listing \ref{stats}) in order to obtain some statistical properties of the data.
+The partition is unmounted between each run to make sure that no files are cached.
+
+Processing of the data is done by \texttt{stats.py} (see listing \ref{stats}) in order to obtain some statistical properties.
 The python library Pandas\footnote{\url{http://pandas.pydata.org/}} proved very helpful in this regard.
 
+\begin{remark}
+	TODO: The program \texttt{mfind} is repurposed...
+\end{remark}
+
+A script was also used to create the tree of searched directories in order to make the benchmark easier to reproduce.
+This script can be found in listing \ref{test-files}.
 
 All tests were run on my personal computer with the specifications seen in table \ref{spec}.
 The drives used was a Kingston DataTraveler 1 GB and a Verbatim 500 GB portable 2.5'' HDD.
 Both drives were connected to a USB 2.0 port.
 
-\begin{table}[h]
+\begin{table}[ht]
 	\centering
 	\begin{tabular}{ll}
 		\toprule
@@ -107,33 +117,43 @@ Both drives were connected to a USB 2.0 port.
 
 \section{Results}
 
+The calculated statistical properties of the timing data can be seen in tables \ref{kingston} and \ref{verbatim}.
+Only slight differences can be seen between the schedulers for the flash drive.
+Most noticeably, the maximum time required is considerably greater for cfq than for the other schedulers.
+This also reflects on a greater standard deviation.
+
 \begin{table}[ht]
 	\centering
-%\csvreader[tabular=lccc,
-\csvreader[tabular=lSSS,
+	\csvreader[tabular=lccc,
 	head to column names,
-	table head=\toprule & \multicolumn{1}{c}{cfq} & \multicolumn{1}{c}{deadline} & \multicolumn{1}{c}{noop} \\ \midrule,
+	table head=\toprule & cfq & deadline & noop \\ \midrule,
 	table foot=\hline
 	]{stats-kingston.csv}{}
 	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
-\caption{Kingston stats}
+	\caption{Kingston stats}
+	\label{kingston}
 \end{table}
+
+Looking at the means and medians (50 \% quantile), we see that noop has the lowest mean, but is beaten by deadline when it comes to the median.
+Noop also has the lowest minimum time required.
+
+The picture is quite different when looking at table \ref{verbatim}.
+This is for a traditional spinning hard drive, so the cfq scheduler get to shine.
+The cfq scheduler has the best mean, minimum, median and 75 \% quantile.
+All this comes at a cost, of course, the maximum time is far greater than for the other schedulers.
+Despite this, however, the cfq still manages to have the lowest standard deviation among the three.
 
 \begin{table}[ht]
 	\centering
-	\csvreader[tabular=lSSS,
-	head to column names,
-	table head=\toprule & \multicolumn{1}{c}{cfq} & \multicolumn{1}{c}{deadline} & \multicolumn{1}{c}{noop} \\ \midrule,
-	table foot=\hline
+	\csvreader[tabular=lccc,
+		head to column names,
+		table head=\toprule & cfq & deadline & noop \\ \midrule,
+		table foot=\hline
 	]{stats-verbatim.csv}{}
 	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
 	\caption{Verbatim stats}
+	\label{verbatim}
 \end{table}
-
-
-%\csvautobooktabular{stats-kingston.csv}
-
-%\csvautobooktabular{stats-verbatim.csv}
 
 
 \section{Final thoughts and lessons learned}
@@ -159,14 +179,16 @@ Similarly, the working threads must stop their own timers, since there might be 
 
 \lstinputlisting[language=c, caption=mfind.c, label=mfind]{../code/mfind.c}
 
+\lstinputlisting[language=c, caption=list.c, label=list]{../code/list.c}
+
+\lstinputlisting[language=c, caption=list.h, label=listh]{../code/list.h}
+
+\lstinputlisting[language=c, caption=parser.c, label=parser]{../code/parser.c}
+
+\lstinputlisting[language=c, caption=parser.h, label=parserh]{../code/parser.h}
+
 \lstinputlisting[caption=Makefile, label=make]{../code/Makefile}
 
-%\section{Raw data}\label{raw}
 
-%\csvautobooktabular{data/medians.csv}
-
-%\csvautobooktabular{data/max.csv}
-
-%\csvautobooktabular{data/min.csv}
 
 \end{document}
