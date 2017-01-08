@@ -6,7 +6,7 @@
 # Generate a file tree to do tests on.
 
 # Starting directory
-# START=/media/removable/KINGSTON
+# START=/run/media/lennart/KINGSTON
 START=/run/media/lennart/Verbatim
 
 # Move to correct directory/device

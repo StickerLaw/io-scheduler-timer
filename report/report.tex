@@ -10,15 +10,9 @@
 \usepackage{amsthm}
 \usepackage{enumerate}
 \usepackage[hidelinks]{hyperref}
-\usepackage{tikz} % för tikz-figurer
-\usepackage{pgfplots}
 \usepackage{csvsimple}
 \usepackage{booktabs}
 \usepackage{siunitx} % Formats the units and values
-\usepackage{pgfplotstable} % Generates table from .csv
-
-\pgfplotsset{width=0.75\textwidth,compat=1.9}
-\usepgfplotslibrary{statistics}
 
 \usepackage[parfill]{parskip}
 
@@ -50,6 +44,8 @@
 \sisetup{exponent-product = \cdot, output-product = \cdot}
 
 \newtheorem{remark}{Remark}
+
+\captionsetup{width=0.8\textwidth}
 
 \title{Operating systems -- Assignment 3\\I/O Scheduling}
 
@@ -84,7 +80,9 @@ Processing of the data is done by \texttt{stats.py} (see listing \ref{stats}) in
 The python library Pandas\footnote{\url{http://pandas.pydata.org/}} proved very helpful in this regard.
 
 \begin{remark}
-	TODO: The program \texttt{mfind} is repurposed...
+	The program \texttt{mfind} was originally made for another assignment and was here simplified and modified to measure the time required for each I/O request.
+	In addition to \texttt{mfind.c} the program also consists of a parser (\texttt{parser.c} and \texttt{parser.h} in listings \ref{parser} and \ref{parserh}) and the linked list that keeps track of what directories to search (\texttt{list.c} and \texttt{list.h} in listings \ref{list} and \ref{listh}).
+	The complete program can be compiled using the make file in listing \ref{make}.
 \end{remark}
 
 A script was also used to create the tree of searched directories in order to make the benchmark easier to reproduce.
@@ -130,7 +128,7 @@ This also reflects on a greater standard deviation.
 	table foot=\hline
 	]{stats-kingston.csv}{}
 	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
-	\caption{Kingston stats}
+	\caption{Statistical properties for the Kingston flash drive. The time values are measured in seconds.}
 	\label{kingston}
 \end{table}
 
@@ -151,43 +149,60 @@ Despite this, however, the cfq still manages to have the lowest standard deviati
 		table foot=\hline
 	]{stats-verbatim.csv}{}
 	{\csvcoli & \num{\csvcolii} & \num{\csvcoliii} & \num{\csvcoliv}}
-	\caption{Verbatim stats}
+	\caption{Statistical properties for the Verbatim HDD. The time values are measured in seconds.}
 	\label{verbatim}
 \end{table}
+
+A comparison of the two drives reveals that the scheduler should be chosen depending on the type of drive for best performance.
+On a traditional spinning drive, there is more to win by ordering the requests in an efficient way.
+However, the ordering does not matter much on a solid state drive, since there is no physical movement required.
+In that case is is better not to spend time finding the ``perfect order'' and thus delay some requests.
+
+In order to improve the noop scheduler on traditional HDDs we would have to allow a higher maximum time.
+This would give the scheduler a better possibility to control the ordering of the requests.
+
+Similarly, the cfq scheduler would probably be faster on flash drives if it just sent all requests in the order they came in, instead of reordering them.
+The deadline scheduler is similar in performance to the noop scheduler on both drives and could probably improve it's performance on HDDs in the same way.
+My guess is that the deadline and noop schedulers would show greater differences if the requests were longer.
+
 
 
 \section{Final thoughts and lessons learned}
 
-It is quite clear that it is possible to spend a considerable amount of time just analyzing schedulers.
-The results are intriguing as they show clear differences in the behavior between the schedulers, and with several different tasks to compare, even more patterns would surely emerge.
+Caching of data gave some problems at first, but this could easily be solve by unmounting the drive between each run.
+However, the unmounting was quite problematic for the HDD since it would sometimes remain busy even after a \texttt{sync} call.
+To solve this, a one second sleep was added to the script.
 
-A lesson learned is that one should think carefully about when and where to start and stop the timers.
-If measuring just the whole task, this is quite easy, but for the individual threads it gets more tricky.
-The thread that starts the other threads must also start the timers since the working thread may not get to start immediately.
-Similarly, the working threads must stop their own timers, since there might be a pause between the threads finishing and actually getting joined.
+The problem with \texttt{sync} and \texttt{umount} made me quite suspicious of the data gathered.
+I am uncertain about what really should be timed and how to make sure that the I/O requests are actually done on the disk and not just in some cache.
+Perhaps more fine tuned control would be needed to solve these problems, with calls to \texttt{syncfs} periodically.
+But that makes it hard to determine the actual time taken for individual requests.
+
+One thing is clear: the I/O scheduler can definitely have a great impact on performance and it can be quite tricky to accurately measure the performance of these schedulers.
+Some theoretical background would have been interesting and helpful if time would have allowed for that during the lectures.
 
 \clearpage
 \appendix
 
 \section{Code listings}
 
+\lstinputlisting[language=c, caption=mfind.c, label=mfind]{../code/mfind.c}
+
 \lstinputlisting[language=bash, caption=timer.sh, label=timer]{../code/timer.sh}
 
 \lstinputlisting[language=python, caption=stats.py, label=stats]{../code/stats.py}
-
-\lstinputlisting[language=bash, caption=generate\_test\_files.sh, label=test-files]{../code/generate_test_files.sh}
-
-\lstinputlisting[language=c, caption=mfind.c, label=mfind]{../code/mfind.c}
-
-\lstinputlisting[language=c, caption=list.c, label=list]{../code/list.c}
-
-\lstinputlisting[language=c, caption=list.h, label=listh]{../code/list.h}
 
 \lstinputlisting[language=c, caption=parser.c, label=parser]{../code/parser.c}
 
 \lstinputlisting[language=c, caption=parser.h, label=parserh]{../code/parser.h}
 
+\lstinputlisting[language=c, caption=list.c, label=list]{../code/list.c}
+
+\lstinputlisting[language=c, caption=list.h, label=listh]{../code/list.h}
+
 \lstinputlisting[caption=Makefile, label=make]{../code/Makefile}
+
+\lstinputlisting[language=bash, caption=generate\_test\_files.sh, label=test-files]{../code/generate_test_files.sh}
 
 
 

@@ -3,14 +3,12 @@ stats.py
 
 Process the data produced by timer.sh by calculating the
 medians, max values and min values for each scheduler.
-Alse plots the density curves.
 
 Author: Lennart Jern (ens16ljn@cs.umu.se)
 """
 
 import pandas as pd
 import re
-import matplotlib.pyplot as plt
 
 def produce_stats():
     """
@@ -30,13 +28,6 @@ def produce_stats():
 
     # Save stats as csv
     stats.to_csv(base+"stats.csv", header=header, float_format="%.3e")
-
-    # Plot and save the density curves
-    ax = df.plot.kde()
-    ax.set_xlabel("Time (s)")
-    ax.set_xlim([0, 0.006])
-    fig = ax.get_figure()
-    fig.savefig(base+"density.pdf")
 
 
 def collect_read_times(file_name):
